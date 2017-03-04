@@ -84,6 +84,7 @@ class TerminalWindow : Gtk.Window
                     null /* cancellable */);
         } catch (Error e) {
             printerr("Error: %s\n", e.message);
+            Idle.add(() => { destroy(); return false; });
         }
 
         show_all();
