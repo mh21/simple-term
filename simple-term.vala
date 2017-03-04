@@ -17,14 +17,14 @@
  ******************************************************************************/
 
 // TODO:
-// - ctrl-click to open link in browser
 // - allow dnd drop of filenames
 
 class TerminalWindow : Gtk.Window
 {
     private Vte.Terminal terminal;
 
-    private const string match_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
+    private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
+    private int link_tag;
 
     public TerminalWindow(Application app, string[] command)
     {
@@ -42,6 +42,7 @@ class TerminalWindow : Gtk.Window
         terminal.window_title_changed.connect(window_title_changed_cb);
         terminal.realize.connect(realize_cb);
         terminal.key_press_event.connect(key_press_event_cb);
+        terminal.button_press_event.connect(button_press_event_cb);
 
         terminal.set_audible_bell(false);
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.SYSTEM);
@@ -63,14 +64,15 @@ class TerminalWindow : Gtk.Window
                 get_color("#54ffff"), get_color("#ffffff") });
 
         try {
-            var regex = new GLib.Regex(match_expr,
+            var regex = new GLib.Regex(link_expr,
                     GLib.RegexCompileFlags.OPTIMIZE |
                     GLib.RegexCompileFlags.MULTILINE,
                     0);
-            var tag = terminal.match_add_gregex(regex, 0);
-            terminal.match_set_cursor_type(tag, Gdk.CursorType.HAND1);
+            link_tag = terminal.match_add_gregex(regex, 0);
+            terminal.match_set_cursor_type(link_tag, Gdk.CursorType.HAND1);
         } catch (Error e) {
-            printerr("Failed to compile regex \"%s\": %s\n", match_expr, e.message);
+            printerr("Failed to compile regex \"%s\": %s\n", link_expr, e.message);
+            // ignored
         }
 
         try {
@@ -132,6 +134,24 @@ class TerminalWindow : Gtk.Window
     private void window_title_changed_cb()
     {
         set_title(terminal.get_window_title());
+    }
+
+    private bool button_press_event_cb(Gdk.EventButton event)
+    {
+        if (event.state == Gdk.ModifierType.CONTROL_MASK && event.button == 1) {
+            int tag;
+            var match = terminal.match_check_event(event, out tag);
+            if (match != null && tag == link_tag) {
+                try {
+                    Gtk.show_uri(get_screen(), match, Gtk.get_current_event_time());
+                } catch (Error e) {
+                    printerr("Error: %s\n", e.message);
+                    // ignored
+                }
+            }
+            return false;
+        }
+        return false;
     }
 
     private bool key_press_event_cb(Gdk.EventKey event)
