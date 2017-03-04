@@ -17,7 +17,7 @@
  ******************************************************************************/
 
 // TODO:
-// - allow dnd drop of filenames
+// - proper dnd behavior for multiple file names
 
 class TerminalWindow : Gtk.Window
 {
@@ -43,6 +43,7 @@ class TerminalWindow : Gtk.Window
         terminal.realize.connect(realize_cb);
         terminal.key_press_event.connect(key_press_event_cb);
         terminal.button_press_event.connect(button_press_event_cb);
+        terminal.drag_data_received.connect(drag_data_received_cb);
 
         terminal.set_audible_bell(false);
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.SYSTEM);
@@ -74,6 +75,13 @@ class TerminalWindow : Gtk.Window
             printerr("Failed to compile regex \"%s\": %s\n", link_expr, e.message);
             // ignored
         }
+
+        var target_list = new Gtk.TargetList(null);
+        target_list.add_text_targets(0);
+        Gtk.drag_dest_set(terminal,
+                Gtk.DestDefaults.ALL,
+                Gtk.target_table_new_from_list(target_list),
+                Gdk.DragAction.COPY);
 
         try {
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT,
@@ -177,6 +185,14 @@ class TerminalWindow : Gtk.Window
             }
         }
         return false;
+    }
+
+    private void drag_data_received_cb(Gtk.Widget widget, Gdk.DragContext context,
+            int x, int y, Gtk.SelectionData selection_data, uint target_type, uint time)
+    {
+        // TODO: distinguish between text and uris, deal with multiple files, convert to FUSE paths
+        terminal.feed_child(selection_data.get_text().chomp(), -1);
+        Gtk.drag_finish(context, true, false, time);
     }
 }
 
