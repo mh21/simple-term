@@ -201,7 +201,6 @@ class Application: Gtk.Application
     {
         Intl.setlocale(LocaleCategory.ALL, "");
 
-        Environment.set_prgname("simple-term");
         Environment.set_application_name("Terminal");
 
         var app = new Application();
