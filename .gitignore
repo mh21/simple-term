@@ -1,5 +1,19 @@
 *~
 simple-term
+*.c
+aclocal.m4
+autom4te.cache
+compile
+config.*
+configure
+core
+depcomp
+.deps
+install-sh
+Makefile
+Makefile.in
+missing
+*.stamp
 
 # Object files
 *.o
