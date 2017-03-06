@@ -1,0 +1,19 @@
+Source: simple-term
+Section: x11
+Priority: extra
+Maintainer: Michael Hofmann <mh21@mh21.de>
+Build-Depends: debhelper (>= 9), libgtk-3-dev, libvte-2.91-dev, valac,
+ gnome-common, autopoint, dh-autoreconf
+Standards-Version: 3.9.8
+Homepage: https://github.com/mh21/simple-term
+Vcs-Git: https://git.launchpad.net/simple-term
+Vcs-Browser: https://code.launchpad.net/simple-term
+
+Package: simple-term
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: x-terminal-emulator
+Description: Simple terminal without tabs
+ Terminal without tabs or configuration, to be used with the window management
+ of a tiling window manager such as i3. Supports copy and paste, text drop,
+ ctrl-click to open links in a browser.
