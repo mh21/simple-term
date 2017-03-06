@@ -222,7 +222,7 @@ class Application: Gtk.Application
         }
 
         if (command.length == 0) {
-                string shell = Vte.get_user_shell();
+            string shell = Vte.get_user_shell();
             if (shell == null || shell[0] == '\0')
                 shell = Environment.get_variable("SHELL");
             if (shell == null || shell[0] == '\0')
@@ -236,12 +236,8 @@ class Application: Gtk.Application
 
     public static int main(string[] argv)
     {
-        Intl.setlocale(LocaleCategory.ALL, "");
-
+        Environment.set_prgname("simple-term");
         Environment.set_application_name("Terminal");
-
-        var app = new Application();
-
-        return app.run(argv);
+        return new Application().run(argv);
     }
 }
