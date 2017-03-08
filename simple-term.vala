@@ -22,6 +22,7 @@
 class TerminalWindow : Gtk.Window
 {
     private Vte.Terminal terminal;
+    private Pid pid;
 
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
@@ -90,7 +91,7 @@ class TerminalWindow : Gtk.Window
                     null, /* environment */
                     GLib.SpawnFlags.SEARCH_PATH,
                     null, /* child setup */
-                    null, /* child pid */
+                    out pid, /* child pid */
                     null /* cancellable */);
         } catch (Error e) {
             printerr("Error: %s\n", e.message);
@@ -115,6 +116,29 @@ class TerminalWindow : Gtk.Window
         if (!terminal.get_realized())
             return;
         terminal.set_geometry_hints_for_window(this);
+    }
+
+    public override bool delete_event(Gdk.EventAny event)
+    {
+        var pty = terminal.get_pty();
+        if (pty == null)
+            return false;
+        var fd = pty.get_fd();
+        if (fd == -1)
+            return false;
+        var fgpid = Posix.tcgetpgrp(fd);
+        if (fgpid == -1 || fgpid == pid)
+            return false;
+
+        Gtk.MessageDialog dialog = new Gtk.MessageDialog(this,
+            0, Gtk.MessageType.WARNING,
+            Gtk.ButtonsType.CANCEL, "Running processes, close nevertheless?");
+        dialog.add_button("_Close", Gtk.ResponseType.ACCEPT);
+        dialog.set_default_response(Gtk.ResponseType.ACCEPT);
+
+        var result = dialog.run();
+        dialog.destroy();
+        return result != Gtk.ResponseType.ACCEPT;
     }
 
     private void char_size_changed_cb()
