@@ -108,6 +108,16 @@ class TerminalWindow : Gtk.Window
         return color;
     }
 
+    private static string convert_uris(string[] uris)
+    {
+        for (var i = 0; i < uris.length; ++i) {
+            var path = File.new_for_uri(uris[i]).get_path();
+            if (path != null)
+                uris[i] = Shell.quote(path);
+        }
+        return string.joinv(" ", uris);
+    }
+
     private void update_geometry()
     {
         if (!terminal.get_realized())
@@ -216,8 +226,7 @@ class TerminalWindow : Gtk.Window
         if (Gtk.targets_include_text(targets)) {
             terminal.feed_child(selection_data.get_text(), -1);
         } else if (Gtk.targets_include_uri(targets)) {
-            // TODO: convert to local/FUSE paths where possible
-            terminal.feed_child(string.joinv(" ", selection_data.get_uris()), -1);
+            terminal.feed_child(convert_uris(selection_data.get_uris()), -1);
         }
         Gtk.drag_finish(context, true, false, time);
     }
