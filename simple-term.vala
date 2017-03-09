@@ -77,12 +77,9 @@ class TerminalWindow : Gtk.Window
             // ignored
         }
 
-        var target_list = new Gtk.TargetList(null);
-        target_list.add_text_targets(0);
-        Gtk.drag_dest_set(terminal,
-                Gtk.DestDefaults.ALL,
-                Gtk.target_table_new_from_list(target_list),
-                Gdk.DragAction.COPY);
+        Gtk.drag_dest_set(terminal, Gtk.DestDefaults.ALL, {}, Gdk.DragAction.COPY);
+        Gtk.drag_dest_add_uri_targets(terminal); // prefer URIs to text
+        Gtk.drag_dest_add_text_targets(terminal);
 
         try {
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT,
@@ -214,8 +211,14 @@ class TerminalWindow : Gtk.Window
     private void drag_data_received_cb(Gtk.Widget widget, Gdk.DragContext context,
             int x, int y, Gtk.SelectionData selection_data, uint target_type, uint time)
     {
-        // TODO: distinguish between text and uris, deal with multiple files, convert to FUSE paths
-        terminal.feed_child(selection_data.get_text().chomp(), -1);
+        // this is the only way to get a usable target list
+        Gdk.Atom[] targets = { selection_data.get_target() };
+        if (Gtk.targets_include_text(targets)) {
+            terminal.feed_child(selection_data.get_text(), -1);
+        } else if (Gtk.targets_include_uri(targets)) {
+            // TODO: convert to local/FUSE paths where possible
+            terminal.feed_child(string.joinv(" ", selection_data.get_uris()), -1);
+        }
         Gtk.drag_finish(context, true, false, time);
     }
 }
