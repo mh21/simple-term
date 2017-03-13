@@ -27,7 +27,7 @@ class TerminalWindow : Gtk.Window
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
 
-    public TerminalWindow(Application app, string[] command)
+    public TerminalWindow(Gtk.Application app, string[] command)
     {
         Object(application: app);
 
@@ -125,6 +125,26 @@ class TerminalWindow : Gtk.Window
         terminal.set_geometry_hints_for_window(this);
     }
 
+    private void edit_contents()
+    {
+        try {
+            FileIOStream iostream;
+            var file = GLib.File.new_tmp("console-output-XXXXXX.txt", out iostream);
+            OutputStream ostream = iostream.output_stream;
+            terminal.write_contents_sync(ostream, Vte.WriteFlags.DEFAULT, null);
+            var editor = Environment.get_variable("EDITOR");
+            if (editor == null || editor[0] == '\0')
+                editor = "vi";
+            new TerminalWindow(this.get_application(), { editor, file.get_path() });
+            // after 10 seconds the editor should have opened the file, remove
+            // it from the filesystem again
+            Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
+        } catch (Error e) {
+            printerr("Error: %s\n", e.message);
+            // ignored
+        }
+    }
+
     public override bool delete_event(Gdk.EventAny event)
     {
         var pty = terminal.get_pty();
@@ -195,7 +215,8 @@ class TerminalWindow : Gtk.Window
 
     private bool key_press_event_cb(Gdk.EventKey event)
     {
-        if (event.state == (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)) {
+        if ((event.state & Gdk.ModifierType.MODIFIER_MASK) ==
+            (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)) {
             switch (event.keyval) {
             case Gdk.Key.C:
                 terminal.copy_clipboard();
@@ -203,9 +224,13 @@ class TerminalWindow : Gtk.Window
             case Gdk.Key.V:
                 terminal.paste_clipboard();
                 return true;
+            case Gdk.Key.S:
+                edit_contents();
+                return true;
             }
         }
-        if ((event.state & ~Gdk.ModifierType.SHIFT_MASK) == Gdk.ModifierType.CONTROL_MASK) {
+        if ((event.state & Gdk.ModifierType.MODIFIER_MASK & ~Gdk.ModifierType.SHIFT_MASK) ==
+            Gdk.ModifierType.CONTROL_MASK) {
             switch (event.keyval) {
             case Gdk.Key.plus:
                 increase_font_size_cb();
