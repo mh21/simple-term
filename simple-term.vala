@@ -27,11 +27,11 @@ class TerminalWindow : Gtk.Window
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
 
-    public TerminalWindow(Gtk.Application app, string[] command)
+    public TerminalWindow(Gtk.Application app, string[] command, string? title)
     {
         Object(application: app);
 
-        title = "Terminal";
+        this.title = title != null ? title : string.joinv(" ", command);
 
         terminal = new Vte.Terminal();
         add(terminal);
@@ -135,7 +135,7 @@ class TerminalWindow : Gtk.Window
             var editor = Environment.get_variable("EDITOR");
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
-            new TerminalWindow(this.get_application(), { editor, file.get_path() });
+            new TerminalWindow(this.get_application(), { editor, file.get_path() }, null);
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -269,12 +269,15 @@ class Application: Gtk.Application
     {
         var argv = command_line.get_arguments();
         string[]? command = null;
+        string title = null;
 
         for (int i = 1; i < argv.length; ++i) {
             if (argv[i] == "-display" || argv[i] == "-name" ||
-                argv[i] == "-T" || argv[i] == "-title" ||
                 argv[i] == "-geometry" || argv[i] == "-fn" ||
                 argv[i] == "-fg" || argv[i] == "-bg" || argv[i] == "-tn") {
+                ++i;
+            } else if (argv[i] == "-T" || argv[i] == "-title") {
+                title = argv[i + 1];
                 ++i;
             } else if (argv[i] == "-e") {
                 command = argv[i + 1:argv.length];
@@ -291,7 +294,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command);
+        new TerminalWindow(this, command, title);
         return 0;
     }
 
