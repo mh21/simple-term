@@ -71,11 +71,10 @@ class TerminalWindow : Gtk.Window
             terminal.set_font(Pango.FontDescription.from_string(this.font));
 
         try {
-            var regex = new GLib.Regex(link_expr,
+            var regex = new Vte.Regex.for_match(link_expr, -1,
                     GLib.RegexCompileFlags.OPTIMIZE |
-                    GLib.RegexCompileFlags.MULTILINE,
-                    0);
-            link_tag = terminal.match_add_gregex(regex, 0);
+                    GLib.RegexCompileFlags.MULTILINE);
+            link_tag = terminal.match_add_regex(regex, 0);
             terminal.match_set_cursor_type(link_tag, Gdk.CursorType.HAND1);
         } catch (Error e) {
             printerr("Failed to compile regex \"%s\": %s\n", link_expr, e.message);
