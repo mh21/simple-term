@@ -23,15 +23,17 @@ class TerminalWindow : Gtk.Window
 {
     private Vte.Terminal terminal;
     private Pid pid;
+    private string? font;
 
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
 
-    public TerminalWindow(Gtk.Application app, string[] command, string? title)
+    public TerminalWindow(Gtk.Application app, string[] command, string? title, string? font)
     {
         Object(application: app);
 
         this.title = title != null ? title : string.joinv(" ", command);
+        this.font = font;
 
         terminal = new Vte.Terminal();
         add(terminal);
@@ -64,6 +66,9 @@ class TerminalWindow : Gtk.Window
                 get_color("#54ff54"), get_color("#ffff54"),
                 get_color("#5454ff"), get_color("#ff54ff"),
                 get_color("#54ffff"), get_color("#ffffff") });
+
+        if (font != null)
+            terminal.set_font(Pango.FontDescription.from_string(this.font));
 
         try {
             var regex = new GLib.Regex(link_expr,
@@ -135,7 +140,7 @@ class TerminalWindow : Gtk.Window
             var editor = Environment.get_variable("EDITOR");
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
-            new TerminalWindow(this.get_application(), { editor, file.get_path() }, null);
+            new TerminalWindow(this.get_application(), { editor, file.get_path() }, null, this.font);
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -270,15 +275,16 @@ class Application: Gtk.Application
         var argv = command_line.get_arguments();
         string[]? command = null;
         string title = null;
+        string font = null;
 
         for (int i = 1; i < argv.length; ++i) {
-            if (argv[i] == "-display" || argv[i] == "-name" ||
-                argv[i] == "-geometry" || argv[i] == "-fn" ||
+            if (argv[i] == "-display" || argv[i] == "-name" || argv[i] == "-geometry" ||
                 argv[i] == "-fg" || argv[i] == "-bg" || argv[i] == "-tn") {
                 ++i;
             } else if (argv[i] == "-T" || argv[i] == "-title") {
-                title = argv[i + 1];
-                ++i;
+                title = argv[++i];
+            } else if (argv[i] == "-fn") {
+                font = argv[++i];
             } else if (argv[i] == "-e") {
                 command = argv[i + 1:argv.length];
                 i = argv.length - 1;
@@ -294,7 +300,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command, title);
+        new TerminalWindow(this, command, title, font);
         return 0;
     }
 

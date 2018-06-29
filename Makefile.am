@@ -4,7 +4,7 @@ AM_CPPFLAGS = $(TERMDEPS_CFLAGS)
 
 AM_CFLAGS = -Wall -Wno-discarded-qualifiers -Wno-pointer-sign -Wno-unused-but-set-variable
 
-VALAFLAGS = --pkg=gtk+-3.0 --pkg=vte-2.91 --pkg=posix --enable-checking
+VALAFLAGS = --pkg=gtk+-3.0 --pkg=vte-2.91 --pkg=pango --pkg=posix --enable-checking
 
 # the terminal
 
