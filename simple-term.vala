@@ -31,7 +31,7 @@ class TerminalWindow : Gtk.Window
     private int link_tag;
 
     public TerminalWindow(Gtk.Application app, string[] command, string? title,
-                          string? font, string fg, string bg)
+                          string? font, string fg, string bg, string? role)
     {
         Object(application: app);
 
@@ -74,6 +74,9 @@ class TerminalWindow : Gtk.Window
 
         if (font != null)
             terminal.set_font(Pango.FontDescription.from_string(this.font));
+
+        if (role != null)
+            this.set_role(role);
 
         try {
             var regex = new Vte.Regex.for_match(link_expr, -1,
@@ -145,7 +148,7 @@ class TerminalWindow : Gtk.Window
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
             new TerminalWindow(this.get_application(), { editor, file.get_path() }, null,
-                               this.font, this.fg, this.bg);
+                               this.font, this.fg, this.bg, "scrollback-edit");
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -283,6 +286,7 @@ class Application: Gtk.Application
         string font = null;
         string fg = "black";
         string bg = "#ffffdd";
+        string? role = null;
 
         for (int i = 1; i < argv.length; ++i) {
             if (argv[i] == "-display" || argv[i] == "-name" || argv[i] == "-geometry" ||
@@ -299,6 +303,8 @@ class Application: Gtk.Application
             } else if (argv[i] == "-e") {
                 command = argv[i + 1:argv.length];
                 i = argv.length - 1;
+            } else if (argv[i] == "-role") {
+                role = argv[++i];
             }
         }
 
@@ -311,7 +317,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command, title, font, fg, bg);
+        new TerminalWindow(this, command, title, font, fg, bg, role);
         return 0;
     }
 
