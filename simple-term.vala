@@ -53,7 +53,6 @@ class TerminalWindow : Gtk.Window
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.SYSTEM);
         terminal.set_cursor_shape(Vte.CursorShape.BLOCK);
         terminal.set_mouse_autohide(true);
-        terminal.set_rewrap_on_resize(true);
         terminal.set_scroll_on_output(false);
         terminal.set_scroll_on_keystroke(true);
         terminal.set_scrollback_lines(-1);
