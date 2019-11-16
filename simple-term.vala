@@ -83,7 +83,7 @@ class TerminalWindow : Gtk.Window
                     GLib.RegexCompileFlags.OPTIMIZE |
                     GLib.RegexCompileFlags.MULTILINE);
             link_tag = terminal.match_add_regex(regex, 0);
-            terminal.match_set_cursor_type(link_tag, Gdk.CursorType.HAND1);
+            terminal.match_set_cursor_name(link_tag, "hand");
         } catch (Error e) {
             printerr("Failed to compile regex \"%s\": %s\n", link_expr, e.message);
             // ignored
@@ -215,7 +215,7 @@ class TerminalWindow : Gtk.Window
             var match = terminal.match_check_event(event, out tag);
             if (match != null && tag == link_tag) {
                 try {
-                    Gtk.show_uri(get_screen(), match, Gtk.get_current_event_time());
+                    Gtk.show_uri_on_window(this, match, Gtk.get_current_event_time());
                 } catch (Error e) {
                     printerr("Error: %s\n", e.message);
                     // ignored
@@ -232,7 +232,7 @@ class TerminalWindow : Gtk.Window
             (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)) {
             switch (event.keyval) {
             case Gdk.Key.C:
-                terminal.copy_clipboard();
+                terminal.copy_clipboard_format(Vte.Format.TEXT);
                 return true;
             case Gdk.Key.V:
                 terminal.paste_clipboard();
