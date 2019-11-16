@@ -36,8 +36,6 @@ class TerminalWindow : Gtk.Window
         Object(application: app);
 
         this.title = title != null ? title : string.joinv(" ", command);
-        this.fg = fg;
-        this.bg = bg;
         this.font = font;
 
         terminal = new Vte.Terminal();
@@ -62,15 +60,7 @@ class TerminalWindow : Gtk.Window
         terminal.set_scroll_on_keystroke(true);
         terminal.set_scrollback_lines(-1);
 
-        terminal.set_colors(get_color(fg), get_color(bg), {
-                get_color("#000000"), get_color("#aa0000"),
-                get_color("#00aa00"), get_color("#aa5400"),
-                get_color("#0000aa"), get_color("#aa00aa"),
-                get_color("#00aaaa"), get_color("#aaaaaa"),
-                get_color("#545454"), get_color("#ff5454"),
-                get_color("#54ff54"), get_color("#ffff54"),
-                get_color("#5454ff"), get_color("#ff54ff"),
-                get_color("#54ffff"), get_color("#ffffff") });
+        update_colors(fg, bg);
 
         if (font != null)
             terminal.set_font(Pango.FontDescription.from_string(this.font));
@@ -268,6 +258,22 @@ class TerminalWindow : Gtk.Window
         }
         Gtk.drag_finish(context, true, false, time);
     }
+
+    public void update_colors(string fg, string bg)
+    {
+        this.fg = fg;
+        this.bg = bg;
+
+        terminal.set_colors(get_color(fg), get_color(bg), {
+                get_color("#000000"), get_color("#aa0000"),
+                get_color("#00aa00"), get_color("#aa5400"),
+                get_color("#0000aa"), get_color("#aa00aa"),
+                get_color("#00aaaa"), get_color("#aaaaaa"),
+                get_color("#545454"), get_color("#ff5454"),
+                get_color("#54ff54"), get_color("#ffff54"),
+                get_color("#5454ff"), get_color("#ff54ff"),
+                get_color("#54ffff"), get_color("#ffffff") });
+    }
 }
 
 class Application: Gtk.Application
@@ -287,6 +293,7 @@ class Application: Gtk.Application
         string fg = "black";
         string bg = "#ffffdd";
         string? role = null;
+        bool update_colors = false;
 
         for (int i = 1; i < argv.length; ++i) {
             if (argv[i] == "-display" || argv[i] == "-name" || argv[i] == "-geometry" ||
@@ -305,7 +312,18 @@ class Application: Gtk.Application
                 i = argv.length - 1;
             } else if (argv[i] == "-role") {
                 role = argv[++i];
+            } else if (argv[i] == "-update") {
+                update_colors = true;
             }
+        }
+
+        if (update_colors) {
+            foreach (var window in this.get_windows()) {
+                if (window is TerminalWindow) {
+                    ((TerminalWindow) window).update_colors(fg, bg);
+                }
+            }
+            return 0;
         }
 
         if (command.length == 0) {
