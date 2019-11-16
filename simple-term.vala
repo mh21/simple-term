@@ -44,9 +44,7 @@ class TerminalWindow : Gtk.Window
         terminal.child_exited.connect(() => { destroy(); });
         terminal.decrease_font_size.connect(decrease_font_size_cb);
         terminal.increase_font_size.connect(increase_font_size_cb);
-        terminal.char_size_changed.connect(char_size_changed_cb);
         terminal.window_title_changed.connect(window_title_changed_cb);
-        terminal.realize.connect(realize_cb);
         terminal.key_press_event.connect(key_press_event_cb);
         terminal.button_press_event.connect(button_press_event_cb);
         terminal.drag_data_received.connect(drag_data_received_cb);
@@ -120,13 +118,6 @@ class TerminalWindow : Gtk.Window
         return string.joinv(" ", uris);
     }
 
-    private void update_geometry()
-    {
-        if (!terminal.get_realized())
-            return;
-        terminal.set_geometry_hints_for_window(this);
-    }
-
     private void edit_contents()
     {
         try {
@@ -171,26 +162,14 @@ class TerminalWindow : Gtk.Window
         return result != Gtk.ResponseType.ACCEPT;
     }
 
-    private void char_size_changed_cb()
-    {
-        update_geometry();
-    }
-
     private void decrease_font_size_cb()
     {
         terminal.set_font_scale(terminal.get_font_scale() / 1.2);
-        update_geometry();
     }
 
     private void increase_font_size_cb()
     {
         terminal.set_font_scale(terminal.get_font_scale() * 1.2);
-        update_geometry();
-    }
-
-    private void realize_cb(Gtk.Widget widget)
-    {
-        update_geometry();
     }
 
     private void window_title_changed_cb()
