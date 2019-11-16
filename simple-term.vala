@@ -30,6 +30,9 @@ class TerminalWindow : Gtk.Window
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
 
+    private const Gdk.ModifierType key_mask = Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK |
+                                              Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.HYPER_MASK | Gdk.ModifierType.META_MASK;
+
     public TerminalWindow(Gtk.Application app, string[] command, string? title,
                           string? font, string fg, string bg, string? role)
     {
@@ -178,7 +181,7 @@ class TerminalWindow : Gtk.Window
 
     private bool button_press_event_cb(Gdk.EventButton event)
     {
-        if (event.state == Gdk.ModifierType.CONTROL_MASK && event.button == 1) {
+        if (((event.state & key_mask) == Gdk.ModifierType.CONTROL_MASK) && (event.button == 1)) {
             int tag;
             var match = terminal.match_check_event(event, out tag);
             if (match != null && tag == link_tag) {
@@ -196,8 +199,7 @@ class TerminalWindow : Gtk.Window
 
     private bool key_press_event_cb(Gdk.EventKey event)
     {
-        if ((event.state & Gdk.ModifierType.MODIFIER_MASK) ==
-            (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.SHIFT_MASK)) {
+        if ((event.state & key_mask) == (Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.CONTROL_MASK)) {
             switch (event.keyval) {
             case Gdk.Key.C:
                 terminal.copy_clipboard_format(Vte.Format.TEXT);
@@ -210,8 +212,7 @@ class TerminalWindow : Gtk.Window
                 return true;
             }
         }
-        if ((event.state & Gdk.ModifierType.MODIFIER_MASK & ~Gdk.ModifierType.SHIFT_MASK) ==
-            Gdk.ModifierType.CONTROL_MASK) {
+        if ((event.state & key_mask & ~Gdk.ModifierType.SHIFT_MASK) == Gdk.ModifierType.CONTROL_MASK) {
             switch (event.keyval) {
             case Gdk.Key.plus:
                 increase_font_size_cb();
