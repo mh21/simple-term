@@ -26,6 +26,7 @@ class TerminalWindow : Gtk.Window
     private string? font;
     private string fg;
     private string bg;
+    private string palette;
 
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
@@ -34,7 +35,7 @@ class TerminalWindow : Gtk.Window
                                               Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.HYPER_MASK | Gdk.ModifierType.META_MASK;
 
     public TerminalWindow(Gtk.Application app, string[] command, string? title,
-                          string? font, string fg, string bg, string? role)
+                          string? font, string fg, string bg, string palette, string? role)
     {
         Object(application: app);
 
@@ -60,7 +61,7 @@ class TerminalWindow : Gtk.Window
         terminal.set_scroll_on_keystroke(true);
         terminal.set_scrollback_lines(-1);
 
-        update_colors(fg, bg);
+        update_colors(fg, bg, palette);
 
         if (font != null)
             terminal.set_font(Pango.FontDescription.from_string(this.font));
@@ -131,7 +132,7 @@ class TerminalWindow : Gtk.Window
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
             new TerminalWindow(this.get_application(), { editor, file.get_path() }, null,
-                               this.font, this.fg, this.bg, "scrollback-edit");
+                               this.font, this.fg, this.bg, this.palette, "scrollback-edit");
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -238,20 +239,16 @@ class TerminalWindow : Gtk.Window
         Gtk.drag_finish(context, true, false, time);
     }
 
-    public void update_colors(string fg, string bg)
+    public void update_colors(string fg, string bg, string palette)
     {
         this.fg = fg;
         this.bg = bg;
+        this.palette = palette;
 
-        terminal.set_colors(get_color(fg), get_color(bg), {
-                get_color("#000000"), get_color("#aa0000"),
-                get_color("#00aa00"), get_color("#aa5400"),
-                get_color("#0000aa"), get_color("#aa00aa"),
-                get_color("#00aaaa"), get_color("#aaaaaa"),
-                get_color("#545454"), get_color("#ff5454"),
-                get_color("#54ff54"), get_color("#ffff54"),
-                get_color("#5454ff"), get_color("#ff54ff"),
-                get_color("#54ffff"), get_color("#ffffff") });
+        Gdk.RGBA[] colors = null;
+        foreach (var color in palette.split(","))
+            colors += get_color(color);
+        terminal.set_colors(get_color(fg), get_color(bg), colors);
     }
 }
 
@@ -271,6 +268,7 @@ class Application: Gtk.Application
         string font = null;
         string fg = "black";
         string bg = "#ffffdd";
+        string palette = "#000000,#aa0000,#00aa00,#aa5400,#0000aa,#aa00aa,#00aaaa,#aaaaaa,#545454,#ff5454,#54ff54,#ffff54,#5454ff,#ff54ff,#54ffff,#ffffff";
         string? role = null;
         bool update_colors = false;
 
@@ -286,6 +284,8 @@ class Application: Gtk.Application
                 fg = argv[++i];
             } else if (argv[i] == "-bg") {
                 bg = argv[++i];
+            } else if (argv[i] == "-palette") {
+                palette = argv[++i];
             } else if (argv[i] == "-e") {
                 command = argv[i + 1:argv.length];
                 i = argv.length - 1;
@@ -299,7 +299,7 @@ class Application: Gtk.Application
         if (update_colors) {
             foreach (var window in this.get_windows()) {
                 if (window is TerminalWindow) {
-                    ((TerminalWindow) window).update_colors(fg, bg);
+                    ((TerminalWindow) window).update_colors(fg, bg, palette);
                 }
             }
             return 0;
@@ -314,7 +314,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command, title, font, fg, bg, role);
+        new TerminalWindow(this, command, title, font, fg, bg, palette, role);
         return 0;
     }
 
