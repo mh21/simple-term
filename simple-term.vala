@@ -232,9 +232,9 @@ class TerminalWindow : Gtk.Window
         // this is the only way to get a usable target list
         Gdk.Atom[] targets = { selection_data.get_target() };
         if (Gtk.targets_include_text(targets)) {
-            terminal.feed_child(selection_data.get_text().to_utf8());
+            terminal.feed_child(selection_data.get_text().data);
         } else if (Gtk.targets_include_uri(targets)) {
-            terminal.feed_child(convert_uris(selection_data.get_uris()).to_utf8());
+            terminal.feed_child(convert_uris(selection_data.get_uris()).data);
         }
         Gtk.drag_finish(context, true, false, time);
     }
