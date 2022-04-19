@@ -19,6 +19,9 @@
 // TODO:
 // - proper dnd behavior for multiple file names
 
+// see /usr/include/pcre2.h
+const uint32 PCRE2_MULTILINE = 0x00000400u;
+
 class TerminalWindow : Gtk.Window
 {
     private Vte.Terminal terminal;
@@ -70,9 +73,7 @@ class TerminalWindow : Gtk.Window
             this.set_role(role);
 
         try {
-            var regex = new Vte.Regex.for_match(link_expr, -1,
-                    GLib.RegexCompileFlags.OPTIMIZE |
-                    GLib.RegexCompileFlags.MULTILINE);
+            var regex = new Vte.Regex.for_match(link_expr, -1, PCRE2_MULTILINE);
             link_tag = terminal.match_add_regex(regex, 0);
             terminal.match_set_cursor_name(link_tag, "hand");
         } catch (Error e) {
@@ -232,9 +233,9 @@ class TerminalWindow : Gtk.Window
         // this is the only way to get a usable target list
         Gdk.Atom[] targets = { selection_data.get_target() };
         if (Gtk.targets_include_text(targets)) {
-            terminal.feed_child(selection_data.get_text().to_utf8());
+            terminal.feed_child(selection_data.get_text().data);
         } else if (Gtk.targets_include_uri(targets)) {
-            terminal.feed_child(convert_uris(selection_data.get_uris()).to_utf8());
+            terminal.feed_child(convert_uris(selection_data.get_uris()).data);
         }
         Gtk.drag_finish(context, true, false, time);
     }
