@@ -10,8 +10,8 @@ Source0: https://github.com/mh21/simple-term/archive/refs/tags/v%{version}.tar.g
 
 BuildRequires: gnome-common
 BuildRequires: vala
-BuildRequires: gtk3-devel
-BuildRequires: vte291-devel
+BuildRequires: gtk4-devel
+BuildRequires: vte291-gtk4-devel
 
 %description
 Simple vte-based terminal

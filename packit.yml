@@ -8,17 +8,17 @@ downstream_package_name: simple-term
 jobs:
   - job: copr_build
     trigger: pull_request
-    targets: [fedora-all]
+    targets: [fedora-37, fedora-38, fedora-rawhide]
 
   - job: copr_build
     trigger: commit
     branch: main
-    targets: [fedora-all]
+    targets: [fedora-37, fedora-38, fedora-rawhide]
     owner: mh21
     project: simple-term-latest
 
   - job: copr_build
     trigger: release
-    targets: [fedora-all]
+    targets: [fedora-37, fedora-38, fedora-rawhide]
     owner: mh21
     project: simple-term
