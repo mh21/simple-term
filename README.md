@@ -18,3 +18,15 @@ Simple vte-based terminal
 - warn when closing terminal windows with running subprocesses
 - ctrl-click on links to open them in a webbrowser
 - xterm-compatible command line interface
+
+## Packages for Fedora Linux
+
+Packages for all current versions of Fedora Linux can be found in
+[Copr][copr-simple-term]:
+
+```shell
+sudo dnf copr enable mh21/simple-term
+sudo dnf install simple-term
+```
+
+[copr-simple-term]: https://copr.fedorainfracloud.org/coprs/mh21/simple-term/
