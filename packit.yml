@@ -2,16 +2,11 @@
 # https://packit.dev/docs/configuration/
 
 specfile_path: simple-term.spec
-files_to_sync: [simple-term.spec, packit.yml]
 upstream_package_name: simple-term
 downstream_package_name: simple-term
 
 jobs:
   - job: copr_build
-    trigger: pull_request
-    targets: [fedora-all]
-
-  - job: tests
     trigger: pull_request
     targets: [fedora-all]
 
