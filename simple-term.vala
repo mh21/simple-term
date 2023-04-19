@@ -34,11 +34,11 @@ class TerminalWindow : Gtk.Window
     private const string link_expr = "(((file|http|ftp|https)://)|(www|ftp)[-A-Za-z0-9]*\\.)[-A-Za-z0-9\\.]+(:[0-9]*)?(/[-A-Za-z0-9_\\$\\.\\+\\!\\*\\(\\),;:@&=\\?/~\\#\\%]*[^]'\\.}>\\) ,\\\"])?";
     private int link_tag;
 
-    private const Gdk.ModifierType key_mask = Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK |
+    private const Gdk.ModifierType key_mask = Gdk.ModifierType.SHIFT_MASK | Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.ALT_MASK |
                                               Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.HYPER_MASK | Gdk.ModifierType.META_MASK;
 
     public TerminalWindow(Gtk.Application app, string[] command, string? title,
-                          string? font, string fg, string bg, string palette, string? role)
+                          string? font, string fg, string bg, string palette)
     {
         Object(application: app);
 
@@ -46,15 +46,17 @@ class TerminalWindow : Gtk.Window
         this.font = font;
 
         terminal = new Vte.Terminal();
-        add(terminal);
+        set_child(terminal);
 
         terminal.child_exited.connect(() => { destroy(); });
         terminal.decrease_font_size.connect(decrease_font_size_cb);
         terminal.increase_font_size.connect(increase_font_size_cb);
         terminal.window_title_changed.connect(window_title_changed_cb);
+        /*
         terminal.key_press_event.connect(key_press_event_cb);
         terminal.button_press_event.connect(button_press_event_cb);
         terminal.drag_data_received.connect(drag_data_received_cb);
+        */
 
         terminal.set_audible_bell(false);
         terminal.set_cursor_blink_mode(Vte.CursorBlinkMode.SYSTEM);
@@ -69,9 +71,6 @@ class TerminalWindow : Gtk.Window
         if (font != null)
             terminal.set_font(Pango.FontDescription.from_string(this.font));
 
-        if (role != null)
-            this.set_role(role);
-
         try {
             var regex = new Vte.Regex.for_match(link_expr, -1, PCRE2_MULTILINE);
             link_tag = terminal.match_add_regex(regex, 0);
@@ -81,9 +80,11 @@ class TerminalWindow : Gtk.Window
             // ignored
         }
 
+        /*
         Gtk.drag_dest_set(terminal, Gtk.DestDefaults.ALL, {}, Gdk.DragAction.COPY);
         Gtk.drag_dest_add_uri_targets(terminal); // prefer URIs to text
         Gtk.drag_dest_add_text_targets(terminal);
+        */
 
         try {
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT,
@@ -99,10 +100,10 @@ class TerminalWindow : Gtk.Window
             Idle.add(() => { destroy(); return false; });
         }
 
-        show_all();
+        present();
     }
 
-    private static Gdk.RGBA? get_color(string str)
+    private static Gdk.RGBA? parse_color(string str)
     {
         var color = Gdk.RGBA();
         if (!color.parse(str)) {
@@ -133,7 +134,7 @@ class TerminalWindow : Gtk.Window
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
             new TerminalWindow(this.get_application(), { editor, file.get_path() }, null,
-                               this.font, this.fg, this.bg, this.palette, "scrollback-edit");
+                               this.font, this.fg, this.bg, this.palette);
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -143,6 +144,7 @@ class TerminalWindow : Gtk.Window
         }
     }
 
+    /*
     public override bool delete_event(Gdk.EventAny event)
     {
         var pty = terminal.get_pty();
@@ -165,6 +167,7 @@ class TerminalWindow : Gtk.Window
         dialog.destroy();
         return result != Gtk.ResponseType.ACCEPT;
     }
+    */
 
     private void decrease_font_size_cb()
     {
@@ -181,6 +184,7 @@ class TerminalWindow : Gtk.Window
         set_title(terminal.get_window_title());
     }
 
+    /*
     private bool button_press_event_cb(Gdk.EventButton event)
     {
         if (((event.state & key_mask) == Gdk.ModifierType.CONTROL_MASK) && (event.button == 1)) {
@@ -239,6 +243,7 @@ class TerminalWindow : Gtk.Window
         }
         Gtk.drag_finish(context, true, false, time);
     }
+    */
 
     public void update_colors(string fg, string bg, string palette)
     {
@@ -248,8 +253,8 @@ class TerminalWindow : Gtk.Window
 
         Gdk.RGBA[] colors = null;
         foreach (var color in palette.split(","))
-            colors += get_color(color);
-        terminal.set_colors(get_color(fg), get_color(bg), colors);
+            colors += parse_color(color);
+        terminal.set_colors(parse_color(fg), parse_color(bg), colors);
     }
 }
 
@@ -270,7 +275,6 @@ class Application: Gtk.Application
         string fg = "black";
         string bg = "#ffffdd";
         string palette = "#000000,#aa0000,#00aa00,#aa5400,#0000aa,#aa00aa,#00aaaa,#aaaaaa,#545454,#ff5454,#54ff54,#ffff54,#5454ff,#ff54ff,#54ffff,#ffffff";
-        string? role = null;
         bool update_colors = false;
 
         for (int i = 1; i < argv.length; ++i) {
@@ -290,8 +294,6 @@ class Application: Gtk.Application
             } else if (argv[i] == "-e") {
                 command = argv[i + 1:argv.length];
                 i = argv.length - 1;
-            } else if (argv[i] == "-role") {
-                role = argv[++i];
             } else if (argv[i] == "-update") {
                 update_colors = true;
             }
@@ -315,7 +317,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command, title, font, fg, bg, palette, role);
+        new TerminalWindow(this, command, title, font, fg, bg, palette);
         return 0;
     }
 
