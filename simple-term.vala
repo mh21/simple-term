@@ -38,7 +38,8 @@ class TerminalWindow : Gtk.Window
                                               Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.HYPER_MASK | Gdk.ModifierType.META_MASK;
 
     public TerminalWindow(Gtk.Application app, string[] command, string? title,
-                          string? font, string fg, string bg, string palette, string? role)
+                          string? font, string fg, string bg, string palette, string? role,
+                          string? working_directory)
     {
         Object(application: app);
 
@@ -87,7 +88,7 @@ class TerminalWindow : Gtk.Window
 
         try {
             terminal.spawn_sync(Vte.PtyFlags.DEFAULT,
-                    null, /* working directory */
+                    working_directory,
                     command,
                     null, /* environment */
                     GLib.SpawnFlags.SEARCH_PATH,
@@ -133,7 +134,7 @@ class TerminalWindow : Gtk.Window
             if (editor == null || editor[0] == '\0')
                 editor = "vi";
             new TerminalWindow(this.get_application(), { editor, file.get_path() }, null,
-                               this.font, this.fg, this.bg, this.palette, "scrollback-edit");
+                               this.font, this.fg, this.bg, this.palette, "scrollback-edit", null);
             // after 10 seconds the editor should have opened the file, remove
             // it from the filesystem again
             Timeout.add_seconds(10, () => { file.delete_async.begin(); return false; });
@@ -272,6 +273,7 @@ class Application: Gtk.Application
         string palette = "#000000,#aa0000,#00aa00,#aa5400,#0000aa,#aa00aa,#00aaaa,#aaaaaa,#545454,#ff5454,#54ff54,#ffff54,#5454ff,#ff54ff,#54ffff,#ffffff";
         string? role = null;
         bool update_colors = false;
+        string? working_directory = null;
 
         for (int i = 1; i < argv.length; ++i) {
             if (argv[i] == "-display" || argv[i] == "-name" || argv[i] == "-geometry" ||
@@ -294,6 +296,8 @@ class Application: Gtk.Application
                 role = argv[++i];
             } else if (argv[i] == "-update") {
                 update_colors = true;
+            } else if (argv[i] == "-w") {
+                working_directory = argv[++i];
             }
         }
 
@@ -315,7 +319,7 @@ class Application: Gtk.Application
             command = { shell };
         }
 
-        new TerminalWindow(this, command, title, font, fg, bg, palette, role);
+        new TerminalWindow(this, command, title, font, fg, bg, palette, role, working_directory);
         return 0;
     }
 
