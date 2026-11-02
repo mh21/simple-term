@@ -25,7 +25,10 @@ Packages for all current versions of Fedora Linux can be found in
 [Copr][copr-simple-term]:
 
 ```shell
+# tagged versions
 sudo dnf copr enable mh21/simple-term
+# latest version from main
+sudo dnf copr enable mh21/simple-term-latest
 sudo dnf install simple-term
 ```
 
